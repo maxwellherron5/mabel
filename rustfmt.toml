@@ -1,0 +1,7 @@
+max_width=120
+format_strings=true
+trailing_comma="Vertical"
+force_multiline_blocks=true
+match_arm_leading_pipes="Always"
+format_code_in_doc_comments=true
+normalize_comments=true
