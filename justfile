@@ -11,3 +11,6 @@ fmt:
 fix:
   cargo fix --workspace --allow-staged
 
+set-env:
+  export $(grep -v '^#' .env | xargs)
+
