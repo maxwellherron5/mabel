@@ -1,0 +1,14 @@
+[package]
+name = "mabel"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+resolver = "2"
+members = [
+  "mabel-core",
+  "mabel-tools",
+  "mabel-server",
+]
+
+[dependencies]
