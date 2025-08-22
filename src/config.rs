@@ -1,9 +1,5 @@
-//! src/config.rs
-//! Load and validate runtime configuration for mabel.
-//!
-//! Priority: CLI flags > .env > defaults.
-
 use crate::{MabelError, Result};
+use dirs;
 use std::{
     env,
     fs::{self, OpenOptions},
@@ -33,44 +29,44 @@ pub enum LlmBackend {
 /// Output style preset for the note.
 #[derive(Clone, Debug)]
 pub enum Mode {
-    Concise, // short abstract + bullets
-    Study,   // longer method/results/glossary
+    /// Short abstract + bullets
+    Concise,
+    /// Longer method/results/glossary
+    Study,
 }
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    // Obsidian
-    pub vault_path: PathBuf,  // absolute, validated
-    pub vault_subdir: String, // e.g., "Papers"
+    /// Obsidian
+    pub vault_path: PathBuf,
+    pub vault_subdir: String,
     pub copy_pdf_into_vault: bool,
 
-    // Cache & IO
-    pub cache_dir: PathBuf,   // e.g., ~/.mabel/papers
-    pub overwrite_note: bool, // if false, append/update
+    /// Cache & IO
+    pub cache_dir: PathBuf,
+    pub overwrite_note: bool,
 
-    // LLM
+    /// LLM
     pub llm: LlmBackend,
 
-    // Extraction
-    pub grobid_url: Option<Url>, // if None -> fallback extractor
+    /// Extraction
+    pub grobid_url: Option<Url>,
 
-    // HTTP/runtime
+    /// HTTP/runtime
     pub http_timeout: StdDuration,
     pub http_retries: u32,
     pub rate_limit_per_min: u32,
 
-    // Rendering
-    pub template_path: PathBuf, // templates/paper_note.md.tera
+    /// Rendering
+    pub template_path: PathBuf,
     pub mode: Mode,
 }
 
 impl Config {
     /// Build from CLI flags + env; do path and permission checks.
     pub fn load(cli: &crate::cli::Cli) -> Result<Self> {
-        // Load .env first (no error if absent).
         let _ = dotenvy::dotenv();
 
-        // ---- Obsidian vault ----
         let vault_path = cli
             .vault_path
             .clone()
@@ -96,7 +92,6 @@ impl Config {
 
         let copy_pdf_into_vault = cli.copy_pdf_into_vault || env_bool("MABEL_COPY_PDF", false);
 
-        // ---- Cache ----
         let cache_dir = cli
             .cache_dir
             .clone()
@@ -110,7 +105,6 @@ impl Config {
 
         let overwrite_note = cli.overwrite || env_bool("MABEL_OVERWRITE_NOTE", false);
 
-        // ---- LLM backend selection ----
         let llm = if cli.ollama {
             let host = cli
                 .ollama_host
@@ -148,7 +142,6 @@ impl Config {
             }
         };
 
-        // ---- Extraction (GROBID optional) ----
         let grobid_url = cli
             .grobid_url
             .clone()
@@ -156,12 +149,10 @@ impl Config {
             .map(|s| Url::parse(&s))
             .transpose()?;
 
-        // ---- HTTP/runtime ----
         let http_timeout = StdDuration::from_secs(env_u64("MABEL_HTTP_TIMEOUT_SECS", 20));
         let http_retries = env_u32("MABEL_HTTP_RETRIES", 2);
         let rate_limit_per_min = env_u32("MABEL_RATE_PER_MIN", 30);
 
-        // ---- Rendering ----
         let template_path = cli
             .template
             .clone()
@@ -199,8 +190,6 @@ impl Config {
         self.cache_dir.join("papers").join(format!("{arxiv_id}.pdf"))
     }
 }
-
-// ---------- helpers ----------
 
 fn expand_path(p: &Path) -> PathBuf {
     // support "~" in env/CLI paths
